@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Place } from '@/data/places';
+import { Place } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 export const useFavorites = () => {

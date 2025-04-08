@@ -1,11 +1,22 @@
-
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
+import { toast } from 'sonner';
 
 const Header = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('Sesión cerrada correctamente');
+    } catch (error) {
+      toast.error('Error al cerrar sesión');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b">
@@ -26,6 +37,14 @@ const Header = () => {
             className="text-jama-secondary"
           >
             <Heart className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleLogout}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>

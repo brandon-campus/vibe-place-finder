@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -9,15 +8,12 @@ import {
   Heart, 
   ArrowLeft, 
   Star,
-  Volume,
-  DollarSign,
-  Tag
+  DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Place } from '@/data/places';
-import { useFavorites } from '@/hooks/useFavorites';
 import { Separator } from '@/components/ui/separator';
+import { Place } from '@/lib/supabase';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface PlaceDetailProps {
   place: Place;
@@ -51,12 +47,12 @@ const PlaceDetail: React.FC<PlaceDetailProps> = ({ place }) => {
         </Button>
         
         <img 
-          src={place.image}
+          src={place.image || 'https://placehold.co/600x400/png'}
           alt={place.name}
           className="w-full h-full object-cover"
         />
         
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
           <h1 className="text-white text-2xl md:text-3xl font-bold">{place.name}</h1>
           <div className="flex items-center mt-2">
             <div className="flex items-center mr-3">
@@ -64,20 +60,15 @@ const PlaceDetail: React.FC<PlaceDetailProps> = ({ place }) => {
               <span className="text-white">{place.rating}</span>
             </div>
             <span className="text-white/80 mr-3">•</span>
-            <div className="flex items-center mr-3">
-              <Volume className="h-4 w-4 text-white/80 mr-1" />
-              <span className="text-white/80">{place.noiseLevel}</span>
-            </div>
-            <span className="text-white/80 mr-3">•</span>
             <div className="flex items-center">
               <DollarSign className="h-4 w-4 text-white/80 mr-1" />
-              <span className="text-white/80">{place.priceRange}</span>
+              <span className="text-white/80">{place.price_range}</span>
             </div>
           </div>
         </div>
       </div>
       
-      <div className="container py-6">
+      <div className="container py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-6">
             <div>
@@ -88,32 +79,14 @@ const PlaceDetail: React.FC<PlaceDetailProps> = ({ place }) => {
             <Separator />
             
             <div>
-              <h2 className="text-xl font-semibold mb-3">Etiquetas</h2>
-              <div className="flex flex-wrap gap-2">
-                {place.tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="px-3 py-1">
-                    <Tag className="h-3 w-3 mr-1" />
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Ambiente ideal para</h2>
-              <div className="flex flex-wrap gap-2">
-                {place.mood.map((mood, index) => (
-                  <Badge key={index} variant="outline" className="px-3 py-1">
-                    {mood}
-                  </Badge>
-                ))}
-              </div>
+              <h2 className="text-xl font-semibold mb-3">Categoría</h2>
+              <p className="text-muted-foreground">
+                {place.categories?.name || 'Sin categoría'}
+              </p>
             </div>
           </div>
           
-          <div className="space-y-6">
+          <div>
             <div className="bg-card rounded-lg p-4 shadow-sm">
               <h3 className="font-semibold mb-4">Información</h3>
               
@@ -122,7 +95,7 @@ const PlaceDetail: React.FC<PlaceDetailProps> = ({ place }) => {
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 mr-3 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Ubicación</p>
-                    <p className="text-sm text-muted-foreground">{place.location} ({place.distance} km)</p>
+                    <p className="text-sm text-muted-foreground">{place.address}</p>
                   </div>
                 </div>
                 
@@ -130,7 +103,7 @@ const PlaceDetail: React.FC<PlaceDetailProps> = ({ place }) => {
                   <Clock className="h-5 w-5 text-muted-foreground mt-0.5 mr-3 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Horario</p>
-                    <p className="text-sm text-muted-foreground">{place.openingHours}</p>
+                    <p className="text-sm text-muted-foreground">{place.hours}</p>
                   </div>
                 </div>
                 
@@ -138,28 +111,30 @@ const PlaceDetail: React.FC<PlaceDetailProps> = ({ place }) => {
                   <Phone className="h-5 w-5 text-muted-foreground mt-0.5 mr-3 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Teléfono</p>
-                    <p className="text-sm text-muted-foreground">{place.phoneNumber}</p>
+                    <p className="text-sm text-muted-foreground">{place.phone}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-start">
-                  <Globe className="h-5 w-5 text-muted-foreground mt-0.5 mr-3 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Sitio web</p>
-                    <a 
-                      href={`https://${place.website}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-jama-primary hover:underline"
-                    >
-                      {place.website}
-                    </a>
+                {place.website && (
+                  <div className="flex items-start">
+                    <Globe className="h-5 w-5 text-muted-foreground mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">Sitio web</p>
+                      <a 
+                        href={place.website.startsWith('http') ? place.website : `https://${place.website}`}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-jama-primary hover:underline"
+                      >
+                        {place.website}
+                      </a>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
             
-            <div className="bg-card rounded-lg p-4 shadow-sm">
+            <div className="bg-card rounded-lg p-4 shadow-sm mt-4">
               <h3 className="font-semibold mb-4">¿Necesitas ayuda?</h3>
               <p className="text-sm text-muted-foreground mb-4">Si necesitas recomendaciones personalizadas, habla con nuestro asistente Jamito.</p>
               <Button 

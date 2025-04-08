@@ -1,36 +1,42 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PlaceDetail from '@/components/PlaceDetail';
-import { places, Place } from '@/data/places';
+import { supabase, Place } from '@/lib/supabase';
 import NotFound from './NotFound';
+import { useQuery } from '@tanstack/react-query';
 
 const PlaceDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [place, setPlace] = useState<Place | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const { data: place, isLoading } = useQuery({
+    queryKey: ['place', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from('places')
+        .select(`
+          *,
+          categories (
+            name,
+            icon
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data as Place;
+    }
+  });
   
-  useEffect(() => {
-    // Simulate API fetch with a small delay
-    const timer = setTimeout(() => {
-      if (id) {
-        const foundPlace = places.find(p => p.id === parseInt(id));
-        setPlace(foundPlace || null);
-      }
-      setLoading(false);
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }, [id]);
-  
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse-slow">Cargando...</div>
+          <div className="animate-pulse">Cargando...</div>
         </main>
         <Footer />
       </div>
